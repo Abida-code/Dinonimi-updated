@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="jspsych-6-dinoNimi2/jspsych.js"></script>
+    <script src="jspsych-6-dinoNimi2/plugins/jspsych-selectExemplar.js"></script>
+    <script src="jspsych-6-dinoNimi2/plugins/jspsych-labelExemplar.js"></script>
+    <script src="jspsych-6-dinoNimi2/plugins/jspsych-judgmentTest.js"></script>
+    <script src="jspsych-6-dinoNimi2/plugins/jspsych-instructions.js"></script>
+    <script src="jspsych-6-dinoNimi2/plugins/jspsych-free-sort.js"></script>
+    <script src="jspsych-6-dinoNimi2/plugins/jspsych-html-button-response.js"></script>
+    <script src="jspsych-6-dinoNimi2/plugins/jspsych-survey-text-pcode.js"></script>
+    
+    <script src="jspsych-6-dinoNimi2/plugins/jspsych-graphs.js"></script>
+    <script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
+
+    <link rel="stylesheet" href="jspsych-6-dinoNimi2/css/jspsych.css"></link>
+  </head>
+
+  <script>
+
+    
+    n_trials_sdl = 10;
+    n_trials_freeSort = 4;
+    n_blocks_judgment = 2;
+
+    n_sdl = 2;
+    n_freeSort_phases=4;
+    n_judgment_phases=4;
+    n_tests=n_freeSort_phases+n_judgment_phases
+
+    count_test = 0;
+    count_freeSort = 0;
+    count_judgment = 0;
+    count_sdl = 0; // "Click Next to start the "+(count_sdl+1)+". learning phase."
+
+    // Helper functions and objects to store data
+    function scrollWin() {window.scrollTo(0, 0);};
+
+    function randomInteger(min, max) {return Math.floor(Math.random() * (max - min) + min);};
+    function makeSeq(seqLength) {
+      sequence = [];
+      for (i = 0; i < seqLength; i++) {sequence.push(i);}
+      return sequence
+    };
+
+    var tax_bottomUp = {
+        Charachodontosaurus:"Theropoda",
+        Velociraptor:"Theropoda",
+        Argentinosaurus:"Sauropodomorpha",
+        Saturnalia:"Sauropodomorpha",
+        Macrogryphosaurus:"Elasmaria",
+        Isasicursor:"Elasmaria",
+        Barilium:"Styracosterna",
+        Uteodon:"Styracosterna"
+    }
+
+    var properties_of_species = {
+        Charachodontosaurus:["Large","Reptile-hipped","Biped"],
+        Velociraptor:["Small","Reptile-hipped","Biped"],
+        Argentinosaurus:["Large","Reptile-hipped","Quadruped"],
+        Saturnalia:["Small","Reptile-hipped","Quadruped"],
+        Macrogryphosaurus:["Large (relative to its family members)","Bird-hipped","Biped"],
+        Isasicursor:["Small","Bird-hipped","Biped"],
+        Barilium:["Large","Bird-hipped","Quadruped"],
+        Uteodon:["Small","Bird-hipped","Quadruped"]
+    };
+    var properties_illustrated = {
+        Charachodontosaurus:["dino_pics/size_carcharodontosaurus.png","dino_pics/reptileHip.png","Walks on two legs"],
+        Velociraptor:["dino_pics/size_velociraptor.png","dino_pics/reptileHip.png","Walks on two legs"],
+        Argentinosaurus:["dino_pics/size_argentinosaurus.png","dino_pics/reptileHip.png","Walks on four legs"],
+        Saturnalia:["dino_pics/size_saturnalia.png","dino_pics/reptileHip.png","Walks on four legs"],
+        Macrogryphosaurus:["dino_pics/size_macrogryphosaurus.png","dino_pics/birdHip.png","Walks on two legs"],
+        Isasicursor:["dino_pics/size_isasicursor.png","dino_pics/birdHip.png","Walks on two legs"],
+        Barilium:["dino_pics/size_barilium.png","dino_pics/birdHip.png","Walks on four legs"],
+        Uteodon:["dino_pics/size_uteodon.png","dino_pics/birdHip.png","Walks on four legs"]
+    };
+
+    var Theropoda = {
+        Charachodontosaurus:["dino_pics/Charachodontosaurus1.png","dino_pics/Charachodontosaurus2.png","dino_pics/Charachodontosaurus3.png"],
+        Velociraptor:["dino_pics/Velociraptor1.png","dino_pics/Velociraptor2.png","dino_pics/Velociraptor3.png"]
+    };
+    var Sauropodomorpha = {
+        Argentinosaurus:["dino_pics/Argentinosaurus1.png","dino_pics/Argentinosaurus2.png","dino_pics/Argentinosaurus3.png"],
+        Saturnalia:["dino_pics/Saturnalia1.png","dino_pics/Saturnalia2.png","dino_pics/Saturnalia3.png"]
+    };
+    var Elasmaria = {
+        Macrogryphosaurus:["dino_pics/Macrogryphosaurus1.png","dino_pics/Macrogryphosaurus2.png","dino_pics/Macrogryphosaurus3.png"],
+        Isasicursor:["dino_pics/Isasicursor1.png","dino_pics/Isasicursor2.png","dino_pics/Isasicursor3.png"]
+    };
+    var Styracosterna = {
+        Barilium:["dino_pics/Barilium1.png","dino_pics/Barilium2.png","dino_pics/Barilium3.png"],
+        Uteodon:["dino_pics/Uteodon1.png","dino_pics/Uteodon2.png","dino_pics/Uteodon3.png"]
+    };
+    
+    var dino_pics = {
+        Theropoda,
+        Sauropodomorpha,
+        Elasmaria,
+        Styracosterna
+      };
+    
+    n_families = Object.keys(dino_pics).length;
+    n_subFamilies = Object.keys(Theropoda).length;
+    n_species = Theropoda.Charachodontosaurus.length;
+    number_btn = n_families*n_subFamilies;
+
+    var TorF_forEachSpecies = {
+        Charachodontosaurus:[],
+        Velociraptor: [],
+        Argentinosaurus:[],
+        Saturnalia:[],
+        Macrogryphosaurus:[],
+        Isasicursor:[],
+        Barilium:[],
+        Uteodon:[]
+    }; 
+
+    var click_history_subFam = {
+        Charachodontosaurus:[],
+        Velociraptor:[],
+        Argentinosaurus:[],
+        Saturnalia:[],
+        Macrogryphosaurus:[],
+        Isasicursor:[],
+        Barilium:[],
+        Uteodon:[]
+      };
+
+    var h_m_c_f_perJudgePhase = {
+        // hit, miss, cr, fa
+        Charachodontosaurus:[],
+        Velociraptor:[],
+        Argentinosaurus:[],
+        Saturnalia:[],
+        Macrogryphosaurus:[],
+        Isasicursor:[],
+        Barilium:[],
+        Uteodon:[]
+    };
+    for(species_x=0;species_x<Object.keys(h_m_c_f_perJudgePhase).length;species_x++){
+        species_x_key = h_m_c_f_perJudgePhase[Object.keys(h_m_c_f_perJudgePhase)[species_x]]
+        for(i=0;i<n_judgment_phases;i++){species_x_key.push([0,0,0,0])}
+    }
+
+    var nCorrect_freeSort = {
+        Theropoda:[0,0,0,0],
+        Sauropodomorpha:[0,0,0,0],
+        Elasmaria:[0,0,0,0],
+        Styracosterna:[0,0,0,0]
+    };
+
+    function reshuffle_sdl(){ 
+      // In every trial, sample one exemplar from each category and reshuffle the sequence of categories
+      var SeqMono_families = [];
+      var Seq0 = makeSeq(n_families);
+      for(i=0;i<n_families;i++){
+         for(j=0;j<n_subFamilies;j++){
+             SeqMono_families.push(Seq0[i])
+          }
+      };
+
+      var SubFam_indices = [];
+      for(x=0;x<n_families;x++){
+        var Seq0 = makeSeq(n_subFamilies);
+        var Seq1 = [];
+        for(y=0;y<n_subFamilies;y++){
+            y_sample = randomInteger(0,Seq0.length);
+              Seq1.push(Seq0[y_sample]);
+              Seq0.splice(y_sample,1);
+        };
+        SubFam_indices.push(Seq1);
+      }
+      SeqRand_families = [];
+      for(i = 0; i<number_btn; i++){
+            i_sample = randomInteger(0,SeqMono_families.length);
+            SeqRand_families.push(SeqMono_families[i_sample]);
+            SeqMono_families.splice(i_sample,1);
+      };
+      dino_pics_reshuffled_sdl = [];
+      current_species_sequence_sdl = [];
+      for (i = 0; i < SeqRand_families.length; i++) {
+            i_familyName = Object.keys(dino_pics)[SeqRand_families[i]];
+            i_subFamilies = dino_pics[i_familyName];
+            i_subFamily_sampled_ID = SubFam_indices[SeqRand_families[i]][0];
+            i_subFamily_sampled_name = Object.keys(i_subFamilies)[i_subFamily_sampled_ID];
+            current_species_sequence_sdl.push(i_subFamily_sampled_name);
+            SubFam_indices[SeqRand_families[i]].splice(0,1);
+            //i_species  = i_subFamilies[i_subFamily_sampled_name][randomInteger(0, n_subFamilies)];
+          i_species = i_subFamilies[i_subFamily_sampled_name][randomInteger(0, n_species)];
+            dino_pics_reshuffled_sdl.push(i_species);
+      };
+      console.log([i_familyName,i_subFamilies,SeqRand_families])
+      // In every trial, reshuffle the sequence of label buttons
+      var dino_labels = Object.keys(dino_pics);
+      var number_btn_labels = dino_labels.length;
+      
+      var SeqMono_labels = makeSeq(dino_labels.length);
+      SeqRand_labels = [];
+      for(i = 0; i<number_btn_labels; i++){
+        i_sample = randomInteger(0,SeqMono_labels.length);
+        SeqRand_labels.push(SeqMono_labels[i_sample]);
+        SeqMono_labels.splice(i_sample,1)
+      }
+      dino_labels_reshuffled_sdl = [];
+      for (i = 0; i < number_btn_labels; i++) {
+        dino_labels_reshuffled_sdl.push(dino_labels[SeqRand_labels[i]]);
+      };
+    };
+    // per species, equal number of correct and incorrect picture-label pairings
+    // therefore, n_blocks should be an even number
+    function makeTestNames_judgment(){
+      var species_indices = [];
+      for(fam_x=0; fam_x<n_families; fam_x++){species_indices.push([])};
+
+      for(xf=0;xf<n_families;xf++){
+        for(xsf=0;xsf<n_subFamilies;xsf++){
+          var Seq0 = makeSeq(n_species);
+          var Seq1 = [];
+            for(y=0;y<n_species;y++){
+                y_sample = randomInteger(0,Seq0.length);
+                  Seq1.push(Seq0[y_sample]);
+                  Seq0.splice(y_sample,1);
+            };
+          species_indices[xf].push(Seq1);
+        };
+      };
+      dino_pics_judgment_perBlock = [];
+      species_sequence_judgment_perBlock = [];
+      names_tobeDisplayed_judgment_perBlock = [];
+      true_familyNames_judgment_perBlock = [];
+      // make sure that there are 50% true picture-label pairings
+      for(fx =0;fx<n_families*n_subFamilies; fx++){
+        TorF_0 = [];
+        for(tfx=0;tfx<n_blocks_judgment;tfx++){
+          if(tfx<(n_blocks_judgment/2)){
+            TorF_0.push("T");
+          }else{
+            TorF_0.push("F");
+          }
+        };
+        for(i=0;i<n_blocks_judgment;i++){
+          i_sample = randomInteger(0,TorF_0.length);
+          TorF_forEachSpecies[Object.keys(TorF_forEachSpecies)[fx]].push(TorF_0[i_sample]);
+          TorF_0.splice(i_sample,1);
+        }
+      };
+      for(block_x=0;block_x<n_blocks_judgment;block_x++){
+        var SeqMono_families = [];
+        var Seq0 = makeSeq(n_families);
+        for(i=0;i<n_families;i++){
+          for(j=0;j<n_subFamilies;j++){
+             SeqMono_families.push(Seq0[i])
+          }
+        };
+        var SubFam_indices = [];
+        for(x=0;x<n_families;x++){
+          var Seq0 = makeSeq(n_subFamilies);
+          var Seq1 = [];
+          for(y=0;y<n_subFamilies;y++){
+              y_sample = randomInteger(0,Seq0.length);
+                Seq1.push(Seq0[y_sample]);
+                Seq0.splice(y_sample,1);
+          };
+          SubFam_indices.push(Seq1);
+        };
+      
+        SeqRand_families = [];
+        for(i = 0; i<number_btn; i++){
+              i_sample = randomInteger(0,SeqMono_families.length);
+              SeqRand_families.push(SeqMono_families[i_sample]);
+              SeqMono_families.splice(i_sample,1);
+        };
+        var dino_pics_reshuffled_judgment = [];
+        var current_species_sequence_judgment = [];
+        for (i = 0; i < SeqRand_families.length; i++) {
+              i_family_ID = SeqRand_families[i];
+              i_familyName = Object.keys(dino_pics)[i_family_ID];
+              i_subFamilies = dino_pics[i_familyName];
+              i_subFamily_ID = SubFam_indices[SeqRand_families[i]][0];
+              i_subFamily_name = Object.keys(i_subFamilies)[i_subFamily_ID];
+              current_species_sequence_judgment.push(i_subFamily_name);
+              SubFam_indices[SeqRand_families[i]].splice(0,1);
+              i_species_ID = species_indices[i_family_ID][i_subFamily_ID][0]
+              species_indices[i_family_ID][i_subFamily_ID].splice(0,1);
+              i_species  = i_subFamilies[i_subFamily_name][i_species_ID];
+              dino_pics_reshuffled_judgment.push(i_species);
+        };
+        var true_familyNames_judgment = [];
+        for(tx=0;tx<current_species_sequence_judgment.length;tx++){
+          true_familyNames_judgment.push(tax_bottomUp[current_species_sequence_judgment[tx]]);
+        };
+        var names_tobeDisplayed_judgment = [];
+        true_or_false_seq = [];
+        for(tf=0;tf<true_familyNames_judgment.length;tf++){
+            tf_name = current_species_sequence_judgment[tf];
+            tf_value = TorF_forEachSpecies[tf_name][block_x];
+            if(tf_value=="T"){
+            //if(randomInteger(0,2)==0){
+              true_or_false_seq.push("true");
+              names_tobeDisplayed_judgment.push(true_familyNames_judgment[tf]);
+            }else{
+              true_or_false_seq.push("false");
+              tf_trueName = true_familyNames_judgment[tf];
+              setOfFamilyNames = Object.keys(dino_pics);
+              trueName_pos = setOfFamilyNames.indexOf(tf_trueName);
+              setOfFamilyNames.splice(trueName_pos,1)
+              if(tf>0){
+                prevName_pos = setOfFamilyNames.indexOf(tf_name_prev);
+                setOfFamilyNames.splice(prevName_pos,1)
+              }
+              tf_falseName = setOfFamilyNames[randomInteger(0, setOfFamilyNames.length)];
+              names_tobeDisplayed_judgment.push(tf_falseName);
+            }
+            tf_name_prev = tf_name
+        };
+        dino_pics_judgment_perBlock.push(dino_pics_reshuffled_judgment);
+        species_sequence_judgment_perBlock.push(current_species_sequence_judgment);
+        names_tobeDisplayed_judgment_perBlock.push(names_tobeDisplayed_judgment);
+        true_familyNames_judgment_perBlock.push(true_familyNames_judgment);
+      };
+    };
+
+    function makeTestNames_freeSort(){
+      var SeqMono_families = [];
+      var Seq0 = makeSeq(n_families);
+      for(i=0;i<n_families;i++){
+         for(j=0;j<n_subFamilies;j++){
+             SeqMono_families.push(Seq0[i])
+          }
+      };
+
+      var SubFam_indices = [];
+      for(x=0;x<n_families;x++){
+        var Seq0 = makeSeq(n_subFamilies);
+        var Seq1 = [];
+        for(y=0;y<n_subFamilies;y++){
+            y_sample = randomInteger(0,Seq0.length);
+              Seq1.push(Seq0[y_sample]);
+              Seq0.splice(y_sample,1);
+        };
+        SubFam_indices.push(Seq1);
+      };
+      
+      SeqRand_families = [];
+      for(i = 0; i<number_btn; i++){
+            i_sample = randomInteger(0,SeqMono_families.length);
+            SeqRand_families.push(SeqMono_families[i_sample]);
+            SeqMono_families.splice(i_sample,1);
+      };
+      dino_pics_reshuffled_freeSort = [];
+      basic_familyName_freeSort = [];
+      sub_familyName_freeSort = [];
+      // 'i_subFamilies[i_subFamily_sampled_name][randomInteger(0, n_species)]')
+      for (i = 0; i < SeqRand_families.length; i++) {
+            i_familyName = Object.keys(dino_pics)[SeqRand_families[i]];
+            basic_familyName_freeSort.push(i_familyName);
+            i_subFamilies = dino_pics[i_familyName];
+            i_subFamily_sampled_ID = SubFam_indices[SeqRand_families[i]][0];
+            i_subFamily_sampled_name = Object.keys(i_subFamilies)[i_subFamily_sampled_ID];
+            sub_familyName_freeSort.push(i_subFamily_sampled_name);
+            SubFam_indices[SeqRand_families[i]].splice(0,1);
+            i_species  = i_subFamilies[i_subFamily_sampled_name][randomInteger(0, n_species)];
+            dino_pics_reshuffled_freeSort.push(i_species);
+      };
+    };
+
+    // INSTRUKTIONEN
+    var welcome = {
+      type: 'html-button-response',
+      stimulus: "<img src='instruction_pics/dinoNimi.png' width=200 style='padding:0px; '>",
+      choices: ["Enter"]
+    };
+
+    var goodbye = {
+      type: 'html-button-response',
+      stimulus: "<b>Thank you very much for participating!</b><p>Press Submit to save your data and end the session.</p>",
+      choices: ["Submit"]
+    };
+     
+
+    var pcode = {
+          type: "survey-text-pcode",
+          questions: [{prompt:"<p> Before you proceed, please enter a valid personal code:",rows: 1, columns: 6}],
+          preamble: "<b>Instruction to generate your code</b>: <br> 1.Postion: First letter of your mother's forename (e.g., <b>M</b>artha) <br> 2.Postion: First letter of your father's forename (e.g., <b>S</b>igmund) <br> Postions 3-4: Your year of birth (e.g., 18<b>95</b>)<br> 5.Postion: First letter of your current address (e.g., <b>B</b>erggasse) <br> 6.Postion: First digit of your house number (e.g., <b>1</b>9) <p> Example complete code: <b>MS95B1</b>",
+          on_finish: function(data) { 
+            code_length = data.code_length;
+            if(code_length!=6){alert("Please enter a 6-digit personal code.")}
+            
+          }
+    };
+    var pcode_loop = {
+      timeline: [pcode],
+      loop_function: function(data){
+          if(code_length!=6){
+                  return true;
+              } else {
+                  return false;
+              }
+        },
+
+    };
+    var informedConsent={
+      
+    };
+    var instruction = {
+      type: 'instructions',
+      pages: [["<h3><span 'style = margin-left: 80'>How quickly can you learn to group natural objects in a meaningful way?</h3>"
+      +"<h3>How easy is it for you to spot important information and neglect the unimportant?</h3>"],
+      ["<p> Educational sciences tell us that these abilities are cruical to learn new things, <br>no matter whether they are things of sports, mathematics, science or arts. <p>The purpose of the present task is to measure these abilities <br>by the example of a self-determined discovery of dinosaur families."
+      +"<p>The task takes place in a simple learning environment,<br> where you can review different dinosaur species to figure out their family memberships."],
+      ["<h3>How to perform the task?</h3>"],
+      ["<p class='largeMarginToTop'>There will be a series of learning episodes, and each episode consists of the following three steps:"
+      +"<p><b>(a)</b> Choose one of eight species yourself"
+      +"<p><img src='instruction_pics/select_numbered.png' width=600 style='padding:10px; border: solid black 1px'>"
+      +"<p><b>(b)</b> Review its features and decide on its family membership.<br>(In the example, the decision is made on the family of the Theropoda.)"
+      +"<p><img src='instruction_pics/review_numbered.png' width=600 style='padding:10px; border: solid black 1px'>"
+      +"<p><b>(c)</b> At first, you will need to guess. Over time, however, <br> you can learn the correct family membership by trial and error."
+      +"<p><img src='instruction_pics/feedback_numbered.png' width=600 style='padding:10px; border: solid black 1px'>"],
+      ["<h3>How to achieve a high performance score?</h3>"],
+      ["<p class='largeMarginToTop'>You need to balance two goals:"
+      +"<li><b>Breadth of exploration</b>: Get to know as many species as possible. Do not concentrate on just a few.</li>"
+      +"<li><b>Accuracy</b>: Make as few errors as possible in determining the family membership of a selected species.</li>"
+      +"<p>To help you keep track of your activities, <br>the number above each picture shows you how often you have already selected the species," 
+      +"<br>and the colour indices your accuracy in determining its membership so far. <br>The colors have the following meaning:"
+      +"<table align='center' id='colorCode'> "
+      +"<tr><td style='background-color:white;border:solid 1px; border-radius: 45px' width='20'></td><td style:'text-align:left'>You have selected the species only once</td></tr>"
+      +"<tr><td style='background-color:red;border:solid 1px; border-radius: 45px'></td><td >Poor accuracy (last two decisions were wrong)</td></tr>"
+      +"<tr><td style='background-color:orange;border:solid 1px; border-radius: 45px'></td><td>Fair (one of the last two decisions was right)</td></tr>"
+      +"<tr><td style='background-color:green;border:solid 1px; border-radius: 45px'></td><td>Very good (last two decisions were right)</td></tr></table>"
+      +"<p>In the example below, the learner should try to improve their understanding of "
+      +"<br> species 3 (only selected once) as well as 7 (last two decisions were wrong)."
+      +"<p><img src='instruction_pics/select_numbered.png' width=600 style='padding:10px; border: solid black 1px'>"],
+      ["<h3>Knowledge tests</h3>"
+      +"From time to time, you will also have to take a knowledge test."
+      +"<br>That way, we want to explore, if different learning strategies (in choosing species) "
+      +"<br>relate to differences in learning success (improvements in knowledge tests)."
+      +"<p>In sum, there are eight quick knowledge tests (about one minute each)."
+      +"<p>Every time, one of two types of knowledge tests need to be taken:"
+      +"<li><b>Free sort</b>: In this type of test, you must form pairs of the pictured species <br>so that the resulting pairs correspond to known families within biology."
+      +"<p><img src='instruction_pics/free_sort.png' width=300 style='padding:10px; border: solid black 1px'>"
+      +"<li><b>Judgement</b>: Here, one picture is presented together with one label, <br>and you have to judge whether this picture-label pair is correct."
+      +"<p><img src='instruction_pics/judgment.png' width=300 style='padding:10px; border: solid black 1px'>"
+      +"<p>When you click the Next button, the first (pre-)knowledge test begins."],
+      ["<p class='largeMarginToTop'><b>Are you ready to take the first test?"]],
+      show_clickable_nav: true,
+      on_finish: function(data){
+        // counter set to zero only at the beginning
+        t_judge_block=0;
+        t_judge_phase=0;
+
+        count_sdl = 0;
+        count_test = 0;
+        // counter set to zero before each test or learning phase 
+        t_sdl=0;
+        t_judge=0;
+        t_freeSort=0;
+        next_test = 'FS';
+
+        makeTestNames_freeSort();
+        reshuffle_sdl();
+        makeTestNames_judgment();
+
+        dino_pics_judgment_curBlock = dino_pics_judgment_perBlock[t_judge_block];
+        species_sequence_judgment_curBlock = species_sequence_judgment_perBlock[t_judge_block];
+        names_tobeDisplayed_judgment_curBlock = names_tobeDisplayed_judgment_perBlock[t_judge_block];
+        true_familyNames_judgment_curBlock = true_familyNames_judgment_perBlock[t_judge_block];
+        
+      }
+    };
+    var instruction2 = {
+      type: 'instructions',
+      pages: [
+      ["<p class='largeMarginToTop'><b>Are you ready to take the first test?"]],
+      show_clickable_nav: true,
+      on_finish: function(data){
+        // counter set to zero only at the beginning
+        t_judge_block=0;
+        t_judge_phase=0;
+
+        count_sdl = 0;
+        count_test = 0;
+        // counter set to zero before each test or learning phase 
+        t_sdl=0;
+        t_judge=0;
+        t_freeSort=0;
+        next_test = 'FS';
+
+        makeTestNames_freeSort();
+        reshuffle_sdl();
+        makeTestNames_judgment();
+
+        dino_pics_judgment_curBlock = dino_pics_judgment_perBlock[t_judge_block];
+        species_sequence_judgment_curBlock = species_sequence_judgment_perBlock[t_judge_block];
+        names_tobeDisplayed_judgment_curBlock = names_tobeDisplayed_judgment_perBlock[t_judge_block];
+        true_familyNames_judgment_curBlock = true_familyNames_judgment_perBlock[t_judge_block];
+        
+      }
+    };
+    
+    var bridge_testToLearning = {
+      type: 'html-button-response',
+      stimulus: function(){if(count_sdl==0){txt="<h3>In the following, you can explore some attributes of the dinosaur species <br>to better understand their family memberships.</h3>"}else{txt="<h3>In the following, you can continue to explore the dinosaurs' attributes <br>and their family memberships.</h3>"} return [txt+"Click Next to start the "+(count_sdl+1)+". learning round."]},
+      choices: ["Next"],
+      on_finish(){
+        t_sdl = 0;
+      }
+    };
+
+    var bridge_learningToTest = {
+      type: 'html-button-response',
+      stimulus: function(){if(next_test == 'FS'){txt="Click next to take another Free-Sort test round."}else{txt="Click next to take another Judgement test round."}return ["<h2> The "+count_sdl+". out of "+n_sdl+" learning rounds is over.</h2>"
+        +txt]},
+      choices: ["Next"],
+      on_finish(){
+        t_freeSort = 0;
+        t_judge = 0;
+        t_judge_block = 0;
+        stop_judgment = 0;
+
+        makeTestNames_freeSort();
+        makeTestNames_judgment();
+
+        dino_pics_judgment_curBlock = dino_pics_judgment_perBlock[t_judge_block];
+        species_sequence_judgment_curBlock = species_sequence_judgment_perBlock[t_judge_block];
+        names_tobeDisplayed_judgment_curBlock = names_tobeDisplayed_judgment_perBlock[t_judge_block];
+        true_familyNames_judgment_curBlock = true_familyNames_judgment_perBlock[t_judge_block];
+      }
+    };
+
+    var SetOfDinoButtons = {
+      type: 'selectExemplar',
+      choices: function(){return dino_pics_reshuffled_sdl},
+      prompt: function(){return "<p>Click on the animal that you would like to explore! <br><b>"+(n_trials_sdl-t_sdl)+"</b> trials remaining until the next knowledge test. </p>"},
+      on_finish: function(data) { 
+        btn_clickedPic_index = data.button_pressed
+        species_clicked = current_species_sequence_sdl[btn_clickedPic_index]
+        true_familyName = tax_bottomUp[species_clicked];
+        properties_species_clicked = properties_of_species[species_clicked];
+        props_illustrated_species_clicked = properties_illustrated[species_clicked];
+      }
+    };
+
+    var NameSelectedPic = {
+      type: 'labelExemplar',
+      stimulus: function(){return dino_pics_reshuffled_sdl[btn_clickedPic_index]},
+      choices: function(){return dino_labels_reshuffled_sdl},
+      on_finish: function(data){
+        btn_clickedLabel_index = data.button_pressed
+        clickedLabel_name = dino_labels_reshuffled_sdl[btn_clickedLabel_index]
+        if(clickedLabel_name==true_familyName){click_history_subFam[species_clicked].push(1)}else{
+          click_history_subFam[species_clicked].push(0)}
+          t_sdl += 1;
+          if (t_sdl==n_trials_sdl) {
+            count_sdl += 1;
+          };
+          reshuffle_sdl();
+        }
+    };
+    
+    sdl_loop = {
+      timeline: [SetOfDinoButtons,NameSelectedPic],
+      loop_function: function(data){      
+          if(t_sdl < n_trials_sdl){
+                  return true;
+              } else {
+                  return false;
+              }
+        },
+       
+    };
+    
+    var test_judgment = {
+      type: 'judgmentTest',
+      stimulus: function(){return dino_pics_judgment_curBlock[t_judge]},
+      choices: ["Yes","No"],
+      choices_conf: ["Very uncertain","Uncertain","Certain","Very Certain"],
+      on_finish: function(data){
+        btn_clicked_yn = data.button_pressed;
+        btn_clicked_confRating = data.button_pressed_conf;
+        // Whether picture-label pairing was correct
+        cur_speciesName = species_sequence_judgment_curBlock[t_judge];
+        if(names_tobeDisplayed_judgment_curBlock[t_judge]==true_familyNames_judgment_curBlock[t_judge]){
+            if(btn_clicked_yn==0){
+              // Hit
+              h_m_c_f_perJudgePhase[cur_speciesName][t_judge_phase][0] += 1;
+            }else{
+              // Miss
+              h_m_c_f_perJudgePhase[cur_speciesName][t_judge_phase][1] += 1;
+            }
+        }else{
+            if(btn_clicked_yn==1){
+              // Correct rejection
+              h_m_c_f_perJudgePhase[cur_speciesName][t_judge_phase][2] += 1;
+            }else{
+              // False alarm
+              h_m_c_f_perJudgePhase[cur_speciesName][t_judge_phase][3] += 1;
+            }
+        };
+        t_judge += 1;
+        n_trials_per_Block = n_families*n_subFamilies;
+        if(t_judge==n_trials_per_Block && t_judge_block==(n_blocks_judgment-1)){
+          stop_judgment = 1;
+          count_test += 1
+          count_judgment += 1
+          t_judge_phase += 1
+          next_test = 'FS';
+        }
+        if(t_judge==n_trials_per_Block && t_judge_block<(n_blocks_judgment-1)){
+          t_judge = 0;
+          t_judge_block += 1;
+          dino_pics_judgment_curBlock = dino_pics_judgment_perBlock[t_judge_block];
+          species_sequence_judgment_curBlock = species_sequence_judgment_perBlock[t_judge_block];
+          names_tobeDisplayed_judgment_curBlock = names_tobeDisplayed_judgment_perBlock[t_judge_block];
+          true_familyNames_judgment_curBlock = true_familyNames_judgment_perBlock[t_judge_block];
+        };
+      }
+    };
+
+    var bridge_judgment = {
+      type: 'html-button-response',
+      stimulus: function(){return "<h2> You have passed the "+count_judgment+". out of "+n_judgment_phases+" rounds of the Judgment knowledge test.</h2>"
+        +"Click Next to see your results.</h2>"},
+      choices: ["Next"],
+      on_finish(){
+        t_sdl = 0;
+          // For each of the four families, p_correct for each of the four rounds
+          dataFourTraces_judgment = {
+            Theropoda:[0,0,0,0],
+            Sauropodomorpha:[0,0,0,0],
+            Elasmaria:[0,0,0,0],
+            Styracosterna: [0,0,0,0]
+          };
+          dataFourTraces_judgment_txt = {
+            Theropoda:[0,0,0,0],
+            Sauropodomorpha:[0,0,0,0],
+            Elasmaria:[0,0,0,0],
+            Styracosterna: [0,0,0,0]
+          };
+          for(fx=0;fx<8;fx++){
+            fx_subname = Object.keys(h_m_c_f_perJudgePhase)[fx];
+            fx_name = tax_bottomUp[fx_subname];
+            for(round_x=0;round_x<t_judge_phase;round_x++){
+              fx_roundx_data = h_m_c_f_perJudgePhase[fx_subname][round_x]
+              fx_signal = fx_roundx_data[0]+fx_roundx_data[1]
+              fx_noise = fx_roundx_data[2]+fx_roundx_data[3]
+              if(fx_signal==0){fx_hitRate=0}else{fx_hitRate = fx_roundx_data[0]/fx_signal}
+              if(fx_noise==0){fx_faRate=0}else{fx_faRate = fx_roundx_data[3]/fx_noise}
+              fx_pc = 0.5*(fx_hitRate+(1-fx_faRate))
+              if(dataFourTraces_judgment[fx_name][round_x]==0){
+                dataFourTraces_judgment[fx_name][round_x] = fx_pc
+                if(fx_pc==0){dataFourTraces_judgment_txt[fx_name][round_x] = .01}
+              }else{
+                  dataFourTraces_judgment[fx_name][round_x] = (dataFourTraces_judgment[fx_name][round_x] + fx_pc)/2
+                  if(dataFourTraces_judgment[fx_name][round_x]==0){dataFourTraces_judgment_txt[fx_name][round_x] = .01}
+                }
+            }
+          }
+          xValues = ['Round 1','Round 2','Round 3','Round 4'];
+          trace1 = {
+            x: xValues.slice(0,count_judgment),
+            y: dataFourTraces_judgment["Theropoda"].slice(0,count_judgment),
+            name: "Theropoda",
+            type: 'bar',
+            text: dataFourTraces_judgment["Theropoda"].slice(0,count_judgment),
+            textposition: 'outside'
+          };
+          trace2 = {
+            x: xValues.slice(0,count_judgment),
+            y: dataFourTraces_judgment["Sauropodomorpha"],
+            name: "Sauropodomorpha",
+            type: 'bar',
+            text: dataFourTraces_judgment["Sauropodomorpha"].slice(0,count_judgment),
+            textposition: 'outside'
+          };
+          trace3 = {
+            x: xValues.slice(0,count_judgment),
+            y: dataFourTraces_judgment["Elasmaria"],
+            name: "Elasmaria",
+            type: 'bar',
+            text: dataFourTraces_judgment["Elasmaria"].slice(0,count_judgment),
+            textposition: 'outside'
+          };
+          trace4 = {
+            x: xValues.slice(0,count_judgment),
+            y: dataFourTraces_judgment["Styracosterna"],
+            name: "Styracosterna",
+            type: 'bar',
+            text: dataFourTraces_judgment["Styracosterna"].slice(0,count_judgment),
+            textposition: 'outside'
+          };
+          layout = {
+            title: 'Take some time to reflect on your learning progress!',
+            barmode: 'group',
+            xaxis: {title: '', autotick: false,ticks: 'outside',tick0: 0,dtick: 1,ticklen: 8,tickwidth: 4,tickcolor: '#000'},
+            yaxis: {title:'Proportion correct',range:[0,1]},
+            autosize: false,
+            width: 600,
+            height: 500,
+            margin: {l: 50,r: 50,b: 100,t: 100,pad: 4},
+            paper_bgcolor: 'white',
+            plot_bgcolor: '#c7c7c7'
+          };
+          dataPlot = [trace1,trace2,trace3,trace4];  
+        
+      }
+    };
+    var feedback_judgment = {
+      
+      type: 'graphs',
+      pages: ['<h3>Your performance so far in the Judgment knowledge test</h3>']
+
+    };
+    var judgmentTest_loop = {
+      timeline: [test_judgment],
+      loop_function: function(data){         
+          if(stop_judgment == 0){
+                  return true;
+              } else {
+                  return false;
+              }
+        },
+    };
+
+    var test_freeSort = {
+      type: 'free-sort',
+      stimuli: function(){return dino_pics_reshuffled_freeSort},
+      sort_area_height: 600,
+      sort_area_width: 800,
+      prompt: function(){return "<h2>Free Sort Knowlege Test (Round "+(count_freeSort+1)+"): Question "+(t_freeSort+1)+ " out of " +n_trials_freeSort+"</h2>"
+        +"<h3>Which of these animals go together to form families?</h3>"
+        +"Find the correct pairs and place them next to each other (by drag and drop) in one of the four family quadrants.</p>"},
+      on_finish: function(data){
+        t_freeSort += 1;
+        if (t_freeSort==n_trials_freeSort) {
+          count_test += 1
+          count_freeSort += 1
+          next_test = 'J';
+        }
+        makeTestNames_freeSort();
+      }
+    };    
+    var bridge_freeSort = {
+      type: 'html-button-response',
+      stimulus: function(){nLeft = (n_trials_freeSort-t_freeSort); if(nLeft==1){txt="<p><b>Thank you!</b> <p>One trial left to complete this round."};if(nLeft>1){txt="<p><b>Thank you!</b> <p>"+nLeft+" questions left to answer in this round."};if(nLeft==0){txt="<h2> You have passed the "+count_freeSort+". out of "+n_freeSort_phases+" rounds of the Free-Sort knowledge test.</h2>"
+        +"Click Next to see your results."} return[txt]},
+      choices: ["Next"],
+      on_finish(){
+        t_sdl = 0;
+
+        if(t_freeSort==n_trials_freeSort){
+          dataFourTraces = [];
+          dataFourTraces_txt = [];
+          for(fx=0;fx<n_families;fx++){
+            fx_name = Object.keys(nCorrect_freeSort)[fx];
+            nCorrect_fx_perRound = [null,null,null,null];
+            nCorrect_fx_perRound_txt = [null,null,null,null];
+            for(round_x=0;round_x<count_freeSort;round_x++){
+              //for(i=0;i<n_trials_freeSort;i++){
+                nCorrect_fx_perRound[round_x] += (nCorrect_freeSort[fx_name][round_x])/n_trials_freeSort
+                nCorrect_fx_perRound_txt[round_x] += (nCorrect_freeSort[fx_name][round_x])/n_trials_freeSort
+                if(nCorrect_fx_perRound[round_x]==0){nCorrect_fx_perRound[round_x] += .01}
+              //}
+            }
+            /*for (i=0; i < count_freeSort; i++) {
+              nCorrect_fx_perRound_txt[i] = nCorrect_fx_perRound[i]/n_trials_freeSort
+              nCorrect_fx_perRound[i] = nCorrect_fx_perRound[i]/n_trials_freeSort
+              if(nCorrect_fx_perRound[i]==0){nCorrect_fx_perRound[i] += .01}
+            }*/
+            dataFourTraces.push(nCorrect_fx_perRound)
+            dataFourTraces_txt.push(nCorrect_fx_perRound_txt)
+          }
+          xValues = ['Round 1','Round 2','Round 3','Round 4'];
+          trace1 = {
+            x: xValues.slice(0,count_freeSort),
+            y: dataFourTraces[0].slice(0,count_freeSort),
+            name: Object.keys(nCorrect_freeSort)[0],
+            type: 'bar',
+            hoverinfo: 'none',
+            text: dataFourTraces_txt[0].slice(0,count_freeSort),
+            textposition: 'outside'
+          };
+          trace2 = {
+            x: xValues.slice(0,count_freeSort),
+            y: dataFourTraces[1].slice(0,count_freeSort),
+            name: Object.keys(nCorrect_freeSort)[1],
+            type: 'bar',
+            hoverinfo: 'none',
+            text: dataFourTraces_txt[1].slice(0,count_freeSort),
+            textposition: 'outside'
+          };
+          trace3 = {
+            x: xValues.slice(0,count_freeSort),
+            y: dataFourTraces[2].slice(0,count_freeSort),
+            name: Object.keys(nCorrect_freeSort)[2],
+            type: 'bar',
+            hoverinfo: 'none',
+            text: dataFourTraces_txt[2].slice(0,count_freeSort),
+            textposition: 'outside'
+          };
+          trace4 = {
+            x: xValues.slice(0,count_freeSort),
+            y: dataFourTraces[3].slice(0,count_freeSort),
+            name: Object.keys(nCorrect_freeSort)[3],
+            type: 'bar',
+            hoverinfo: 'none',
+            text: dataFourTraces_txt[3].slice(0,count_freeSort),
+            textposition: 'outside'
+          };
+          if(count_test==1){titletxt='Take some time to reflect on your scoring!'}else{
+              titletxt='Take some time to reflect on your learning progress!'};
+          layout = {
+            title: titletxt,
+            barmode: 'group',
+            xaxis: {title: '', autotick: false,ticks: 'outside',tick0: 0,dtick: 1,ticklen: 8,tickwidth: 4,tickcolor: '#000'},
+            yaxis: {title: 'Proportion correct',range:[0,1]},
+            autosize: false,
+            width: 600,
+            height: 500,
+            margin: {l: 50,r: 50,b: 100,t: 100,pad: 4},
+            paper_bgcolor: 'white',
+            plot_bgcolor: '#c7c7c7'
+          };
+          dataPlot = [trace1,trace2,trace3,trace4];
+        }  
+      }
+    };
+    var feedback_freeSort = {
+      
+      type: 'graphs',
+      pages: ['<h3>Your performance so far in the Free-Sort knowledge test</h3>']
+
+    };
+
+
+    var freeSort_loop = {
+      timeline: [test_freeSort,bridge_freeSort],
+      loop_function: function(data){
+              
+          if(t_freeSort < n_trials_freeSort){
+                  return true;
+              } else {
+                  return false;
+              }
+        },
+       
+    };
+
+    jsPsych.init({
+      timeline: [welcome,pcode_loop,instruction,instruction2,
+        // Test 1 Free Sort 1
+        freeSort_loop,feedback_freeSort,bridge_testToLearning,
+        // Learning 1
+        sdl_loop,bridge_learningToTest,
+        // Test 2 Judgment 1
+        judgmentTest_loop,bridge_judgment,feedback_judgment,bridge_testToLearning,
+        // Learning 2
+        sdl_loop,bridge_learningToTest,
+        // Test 3 Free Sort 2
+        freeSort_loop,feedback_freeSort,bridge_testToLearning,
+        // Learning 3
+        sdl_loop,bridge_learningToTest,
+        // Test 4 Judgment 2
+        judgmentTest_loop,bridge_judgment,feedback_judgment,bridge_testToLearning,
+        // Learning 4
+        sdl_loop,bridge_learningToTest,
+        // Test 5 Free Sort 3
+        freeSort_loop,feedback_freeSort,bridge_testToLearning,
+        // Learning 5
+        sdl_loop,bridge_learningToTest,
+        // Test 6 Judgment 3
+        judgmentTest_loop,bridge_judgment,feedback_judgment,bridge_testToLearning,
+        // Learning 6
+        sdl_loop,bridge_learningToTest,
+        // Test 7 Free Sort 4
+        freeSort_loop,feedback_freeSort,bridge_testToLearning,
+        // Learning 7
+        sdl_loop,bridge_learningToTest,
+        // Test 8 Judgment 4
+        judgmentTest_loop,bridge_judgment,feedback_judgment,
+        goodbye
+        ],
+      on_finish: function() {
+            // Dear Developers! Please see the PHP script under "Storing data permanently" at https://www.jspsych.org/overview/data/ 
+          }
+
+    });
+
+  </script>
+</html>
